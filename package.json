@@ -1,0 +1,14 @@
+{
+  "name": "29-card-game",
+  "version": "1.0.0",
+  "description": "Online 29 card game for 4 players",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.8.1"
+  }
+}

@@ -1,0 +1,285 @@
+:root {
+  --bg: #163f25;
+  --paper: #f7f2e7;
+  --ink: #161616;
+  --accent: #38d83e;
+  --danger: #9e2a2b;
+  --table: #0f6a2f;
+  --muted: #59564f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  background: radial-gradient(circle at top, #24733f, #0e2f1d);
+  color: var(--ink);
+}
+
+main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.panel {
+  background: var(--paper);
+  border: 1px solid #ddd2bf;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+input,
+button,
+select {
+  font: inherit;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #c7bda8;
+}
+
+button {
+  background: #ece2cf;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #e4d8c0;
+}
+
+button.secondary {
+  background: #f7f4ef;
+}
+
+.hidden {
+  display: none;
+}
+
+.error {
+  color: var(--danger);
+  min-height: 1.2em;
+}
+
+.accent {
+  color: var(--accent);
+  min-height: 1.2em;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.table {
+  background: radial-gradient(circle at 50% 40%, #13863a, var(--table));
+  min-height: 360px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 10px;
+  border: 1px solid #0a4f23;
+}
+
+.seat {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  padding: 8px;
+  color: #fff;
+  min-height: 94px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#seat0 {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+#seat1 {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+#seat2 {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+#seat3 {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.trick {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  justify-self: center;
+  color: #fff;
+  text-align: center;
+  font-size: 0.95rem;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 170px;
+}
+
+.hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card {
+  border: 1px solid #c9bda9;
+  background: #fff;
+  border-radius: 8px;
+  min-width: 54px;
+  text-align: center;
+  padding: 8px;
+}
+
+.card.red {
+  color: #be2f2f;
+}
+
+.card.playable {
+  border: 2px solid var(--accent);
+  cursor: pointer;
+}
+
+.board-shell {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.board-wrap {
+  display: grid;
+  grid-template-columns: 170px 1fr 170px;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.side-panel {
+  background: #0d361f;
+  color: #eef9f0;
+  border-radius: 10px;
+  border: 1px solid #1f6d39;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.92rem;
+}
+
+.side-panel h4 {
+  margin: 0 0 4px;
+  color: #95ff8f;
+}
+
+.side-panel div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.seat-avatar {
+  width: 34px;
+  flex: 0 0 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.seat-avatar::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f4d3a8;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  margin-bottom: 2px;
+}
+
+.seat-avatar::after {
+  content: "";
+  width: 20px;
+  height: 14px;
+  border-radius: 8px 8px 4px 4px;
+  background: #2f7ef0;
+}
+
+.seat-info {
+  line-height: 1.25;
+}
+
+.seat-dir {
+  color: #b7f9bf;
+  font-size: 0.8rem;
+  letter-spacing: 0.4px;
+}
+
+.seat-name {
+  font-weight: bold;
+}
+
+.seat-meta {
+  font-size: 0.84rem;
+}
+
+ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+@media (max-width: 650px) {
+  .board-wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .side-panel {
+    order: 2;
+  }
+
+  .table {
+    order: 1;
+    min-height: 300px;
+  }
+
+  .seat {
+    font-size: 0.9rem;
+    min-height: 86px;
+  }
+
+  .card {
+    min-width: 48px;
+    padding: 6px;
+  }
+}
