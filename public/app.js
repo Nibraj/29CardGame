@@ -61,6 +61,15 @@ function renderSeats() {
   for (let seat = 0; seat < 4; seat += 1) {
     const slot = document.getElementById(`seat${seat}`);
     const player = playerBySeat(seat);
+    const cardBacks = (count) => {
+      let html = '<div class="seat-cards">';
+      for (let i = 0; i < count; i += 1) {
+        html += '<span class="mini-back"></span>';
+      }
+      html += '</div>';
+      return html;
+    };
+
     if (!player) {
       slot.innerHTML = `
         <div class="seat-avatar"></div>
@@ -82,6 +91,7 @@ function renderSeats() {
         <div class="seat-name">${player.name}${youMark}</div>
         <div class="seat-meta">Team ${player.team + 1}${turnMark}</div>
         <div class="seat-meta">Cards: ${player.cardCount}</div>
+        ${cardBacks(player.cardCount)}
       </div>
     `;
   }
@@ -93,10 +103,18 @@ function renderTrick() {
     return;
   }
 
-  const lines = state.game.trick
-    .map((entry) => `${playerBySeat(entry.seat)?.name || `Seat ${entry.seat + 1}`}: ${cardText(entry.card)}`)
-    .join('<br/>');
-  trickArea.innerHTML = `<strong>Trick ${Math.min(state.game.trickNumber, 8)}</strong><br/>${lines}`;
+  let cardsHtml = '<div class="trick-cards">';
+  state.game.trick.forEach((entry) => {
+    const name = playerBySeat(entry.seat)?.name || `Seat ${entry.seat + 1}`;
+    cardsHtml += `
+      <div class="trick-card-wrap">
+        <div class="table-card ${isRed(entry.card) ? 'red' : ''}">${cardText(entry.card)}</div>
+        <span>${name}</span>
+      </div>
+    `;
+  });
+  cardsHtml += '</div>';
+  trickArea.innerHTML = `<strong>Trick ${Math.min(state.game.trickNumber, 8)}</strong>${cardsHtml}`;
 }
 
 function renderHand() {
@@ -189,6 +207,18 @@ function renderActions() {
     const p = document.createElement('p');
     p.textContent = 'Play one highlighted card.';
     actions.appendChild(p);
+
+    const revealBtn = document.createElement('button');
+    revealBtn.textContent = state.game.trumpRevealed ? 'Trump Revealed' : 'Reveal Trump';
+    revealBtn.disabled = !state.game.canRevealTrump || state.game.trumpRevealed;
+    revealBtn.title = state.game.canRevealTrump
+      ? 'Reveal trump now'
+      : 'Available only if you cannot follow the current lead suit';
+    revealBtn.onclick = async () => {
+      const res = await api('revealTrump');
+      if (!res.ok) actionError.textContent = res.error || 'Could not reveal trump.';
+    };
+    actions.appendChild(revealBtn);
   }
 
   if (!actions.childElementCount) {
@@ -211,7 +241,8 @@ function renderStatus() {
     const bidder = playerBySeat(game.bidding.bidderSeat);
     line += ` | Bid: ${game.bidding.currentBid} by ${bidder?.name || '-'} (choose trump)`;
   } else if (game.phase === 'play') {
-    line += ` | Trump: ${suitLabel[game.trumpSuit] || '-'} | Trick: ${Math.min(game.trickNumber, 8)} | Turn: ${turnName}`;
+    const trumpText = game.trumpRevealed ? (suitLabel[game.trumpSuit] || '-') : 'Hidden';
+    line += ` | Trump: ${trumpText} | Trick: ${Math.min(game.trickNumber, 8)} | Turn: ${turnName}`;
     line += ` | Team points: ${game.teamPoints[0]}-${game.teamPoints[1]}`;
   } else if (game.phase === 'roundOver') {
     line += ' | Next round starts shortly.';
@@ -228,7 +259,11 @@ function renderBoardInfo() {
   infoDealer.textContent = dealer?.name || '-';
   infoBidder.textContent = bidder?.name || '-';
   infoBid.textContent = state.game.bidding.currentBid ?? '-';
-  infoTrump.textContent = suitLabel[state.game.trumpSuit] || '-';
+  infoTrump.textContent = state.game.trumpRevealed
+    ? (suitLabel[state.game.trumpSuit] || '-')
+    : (state.you?.seat === state.game.bidding.bidderSeat && state.game.trumpSuit
+      ? `${suitLabel[state.game.trumpSuit]} (Hidden)`
+      : 'Hidden');
   infoTarget.textContent = state.game.bidding.currentBid ?? '-';
   infoTeam0.textContent = String(state.game.teamPoints[0]);
   infoTeam1.textContent = String(state.game.teamPoints[1]);

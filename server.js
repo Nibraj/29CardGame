@@ -113,6 +113,7 @@ function initialGameState() {
       history: []
     },
     trumpSuit: null,
+    trumpRevealed: false,
     trick: [],
     trickNumber: 1,
     teamPoints: [0, 0],
@@ -159,6 +160,7 @@ function startRound(room) {
   game.hands = [[], [], [], []];
   game.deck = shuffle(makeDeck());
   game.trumpSuit = null;
+  game.trumpRevealed = false;
   game.currentTurn = nextSeat(game.dealer);
   game.trick = [];
   game.trickNumber = 1;
@@ -194,13 +196,15 @@ function endRound(room) {
   const bidderTeam = teamOf(game.bidding.bidderSeat);
   const defendingTeam = bidderTeam === 0 ? 1 : 0;
   const bidderSucceeded = game.teamPoints[bidderTeam] >= game.bidding.currentBid;
+  const bidder = playerBySeat(room, game.bidding.bidderSeat);
+  const bidderName = bidder ? bidder.name : `Seat ${game.bidding.bidderSeat + 1}`;
 
   if (bidderSucceeded) {
     game.gamePoints[bidderTeam] += 1;
-    game.roundResult = `${room.players[game.bidding.bidderSeat].name}'s team made ${game.teamPoints[bidderTeam]} and won the bid ${game.bidding.currentBid}.`;
+    game.roundResult = `${bidderName}'s team made ${game.teamPoints[bidderTeam]} and won the bid ${game.bidding.currentBid}.`;
   } else {
     game.gamePoints[defendingTeam] += 1;
-    game.roundResult = `${room.players[game.bidding.bidderSeat].name}'s team made ${game.teamPoints[bidderTeam]} and failed the bid ${game.bidding.currentBid}.`;
+    game.roundResult = `${bidderName}'s team made ${game.teamPoints[bidderTeam]} and failed the bid ${game.bidding.currentBid}.`;
   }
 
   logMessage(room, game.roundResult);
@@ -226,6 +230,20 @@ function serializeForPlayer(room, socketId) {
   const player = room.players.find((p) => p.id === socketId);
   const seat = player ? player.seat : null;
   const game = room.game;
+  const leadSuit = game.trick.length > 0 ? parseCard(game.trick[0].card).suit : null;
+
+  const canRevealTrump = (() => {
+    if (!player) return false;
+    if (game.phase !== 'play') return false;
+    if (game.currentTurn !== player.seat) return false;
+    if (game.trumpRevealed) return false;
+    if (!leadSuit) return false;
+    return !game.hands[player.seat].some((c) => parseCard(c).suit === leadSuit);
+  })();
+
+  const visibleTrumpSuit = game.trumpRevealed || (player && player.seat === game.bidding.bidderSeat)
+    ? game.trumpSuit
+    : null;
 
   return {
     roomCode: room.code,
@@ -247,7 +265,8 @@ function serializeForPlayer(room, socketId) {
       round: game.round,
       currentTurn: game.currentTurn,
       bidding: game.bidding,
-      trumpSuit: game.trumpSuit,
+      trumpSuit: visibleTrumpSuit,
+      trumpRevealed: game.trumpRevealed,
       trick: game.trick,
       trickNumber: game.trickNumber,
       teamPoints: game.teamPoints,
@@ -257,7 +276,8 @@ function serializeForPlayer(room, socketId) {
       matchWinner: game.matchWinner,
       messages: game.messages,
       hand: seat !== null ? game.hands[seat] : [],
-      legalCards: seat !== null && game.phase === 'play' && game.currentTurn === seat ? legalCardsForSeat(game, seat) : []
+      legalCards: seat !== null && game.phase === 'play' && game.currentTurn === seat ? legalCardsForSeat(game, seat) : [],
+      canRevealTrump
     }
   };
 }
@@ -432,15 +452,15 @@ io.on('connection', (socket) => {
     const biddingEnded = game.bidding.currentBid !== null && game.bidding.consecutivePasses >= 3;
 
     if (allPassedNoBid) {
-    game.bidding.currentBid = 16;
-    game.bidding.bidderSeat = game.dealer;
-    game.phase = 'trump';
-    game.currentTurn = game.dealer;
-    const dealerPlayer = playerBySeat(room, game.dealer);
-    logMessage(room, `All players passed. Dealer ${dealerPlayer ? dealerPlayer.name : `Seat ${game.dealer + 1}`} is forced to bid 16.`);
-    emitRoom(room);
-    return ack({ ok: true });
-  }
+      game.bidding.currentBid = 16;
+      game.bidding.bidderSeat = game.dealer;
+      game.phase = 'trump';
+      game.currentTurn = game.dealer;
+      const dealerPlayer = playerBySeat(room, game.dealer);
+      logMessage(room, `All players passed. Dealer ${dealerPlayer ? dealerPlayer.name : `Seat ${game.dealer + 1}`} is forced to bid 16.`);
+      emitRoom(room);
+      return ack({ ok: true });
+    }
 
     if (biddingEnded) {
       game.phase = 'trump';
@@ -467,13 +487,35 @@ io.on('connection', (socket) => {
     if (!SUITS.includes(suit)) return ack({ ok: false, error: 'Invalid suit.' });
 
     game.trumpSuit = suit;
+    game.trumpRevealed = false;
 
     dealCards(game, 4, game.dealer); // remaining 4 cards each
 
     game.phase = 'play';
     game.currentTurn = game.bidding.bidderSeat;
 
-    logMessage(room, `${bidder.name} selected ${suit} as trump.`);
+    logMessage(room, `${bidder.name} selected trump.`);
+    emitRoom(room);
+    ack({ ok: true });
+  });
+
+  socket.on('revealTrump', (_, ack = () => {}) => {
+    const room = roomBySocket(socket.id);
+    if (!room) return ack({ ok: false, error: 'Not in room.' });
+    const game = room.game;
+    if (game.phase !== 'play') return ack({ ok: false, error: 'Not play phase.' });
+    if (game.trumpRevealed) return ack({ ok: false, error: 'Trump already revealed.' });
+    if (game.trick.length === 0) return ack({ ok: false, error: 'Play started trick is required.' });
+
+    const player = room.players.find((p) => p.id === socket.id);
+    if (!player || player.seat !== game.currentTurn) return ack({ ok: false, error: 'Not your turn.' });
+
+    const leadSuit = parseCard(game.trick[0].card).suit;
+    const hasLeadSuit = game.hands[player.seat].some((c) => parseCard(c).suit === leadSuit);
+    if (hasLeadSuit) return ack({ ok: false, error: 'You must follow suit.' });
+
+    game.trumpRevealed = true;
+    logMessage(room, `${player.name} revealed trump (${game.trumpSuit}).`);
     emitRoom(room);
     ack({ ok: true });
   });
@@ -503,7 +545,8 @@ io.on('connection', (socket) => {
       return ack({ ok: true });
     }
 
-    const winnerSeat = trickWinner(game.trick, game.trumpSuit);
+    const activeTrump = game.trumpRevealed ? game.trumpSuit : null;
+    const winnerSeat = trickWinner(game.trick, activeTrump);
     const points = trickPoints(game.trick) + (game.trickNumber === 8 ? 1 : 0);
     const winnerTeam = teamOf(winnerSeat);
     game.teamPoints[winnerTeam] += points;

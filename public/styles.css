@@ -67,6 +67,11 @@ button.secondary {
   background: #f7f4ef;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .hidden {
   display: none;
 }
@@ -147,6 +152,38 @@ button.secondary {
   border-radius: 8px;
   padding: 8px;
   min-width: 170px;
+}
+
+.trick-cards {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.trick-card-wrap {
+  text-align: center;
+  font-size: 0.72rem;
+  color: #eaf7ec;
+}
+
+.table-card {
+  width: 42px;
+  height: 56px;
+  border-radius: 6px;
+  border: 1px solid #ece7da;
+  background: #fff;
+  color: #1c1c1c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.table-card.red {
+  color: #be2f2f;
 }
 
 .hand {
@@ -252,6 +289,24 @@ button.secondary {
 
 .seat-meta {
   font-size: 0.84rem;
+}
+
+.seat-cards {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.mini-back {
+  width: 15px;
+  height: 20px;
+  border-radius: 3px;
+  border: 1px solid #97b8e3;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.34) 25%, transparent 25%) 0 0/6px 6px,
+    linear-gradient(135deg, transparent 75%, rgba(255, 255, 255, 0.34) 75%) 0 0/6px 6px,
+    #2f6ed8;
 }
 
 ul {
